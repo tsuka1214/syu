@@ -5,7 +5,6 @@ import * as z from "zod";
 import { format } from "date-fns";
 import {
   useCreateReport,
-  useListChannels,
   getListReportsQueryKey,
   getGetReportSummaryQueryKey,
 } from "@workspace/api-client-react";
@@ -25,13 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Send, Loader2 } from "lucide-react";
 
@@ -43,7 +36,6 @@ const formSchema = z.object({
   date: z.string().min(1, "日付を入力してください"),
   reason: z.string().min(1, "理由を入力してください"),
   expectedTime: z.string().optional(),
-  channelId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,7 +44,6 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data: channels, isLoading: isLoadingChannels } = useListChannels();
   const createReport = useCreateReport();
 
   const form = useForm<FormValues>({
@@ -63,7 +54,6 @@ export default function Home() {
       date: format(new Date(), "yyyy-MM-dd"),
       reason: "",
       expectedTime: "",
-      channelId: "",
     },
   });
 
@@ -75,10 +65,6 @@ export default function Home() {
     if (payload.type !== "late") {
       delete payload.expectedTime;
     }
-    if (!payload.channelId) {
-      delete payload.channelId;
-    }
-
     createReport.mutate(
       { data: payload as any },
       {
@@ -93,7 +79,6 @@ export default function Home() {
             date: format(new Date(), "yyyy-MM-dd"),
             reason: "",
             expectedTime: "",
-            channelId: data.channelId, // keep channel
           });
           queryClient.invalidateQueries({ queryKey: getListReportsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetReportSummaryQueryKey() });
@@ -212,32 +197,6 @@ export default function Home() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="channelId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>送信先チャンネル (任意)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={isLoadingChannels ? "読み込み中..." : "デフォルトのチャンネル"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="default">デフォルトのチャンネル</SelectItem>
-                        {channels?.map((ch) => (
-                          <SelectItem key={ch.id} value={ch.id}>
-                            {ch.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
