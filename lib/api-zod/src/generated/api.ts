@@ -106,6 +106,16 @@ export const GetReportSummaryResponse = zod.object({
 
 
 /**
+ * @summary 本日の未送信連絡をまとめてLINE WORKSへ送信
+ */
+export const SendDigestResponse = zod.object({
+  "sentCount": zod.number().describe('送信した連絡件数'),
+  "date": zod.string().describe('対象日付 (YYYY-MM-DD)'),
+  "messageId": zod.string().nullish()
+})
+
+
+/**
  * @summary LINE WORKSチャンネル一覧を取得
  */
 export const ListChannelsResponseItem = zod.object({

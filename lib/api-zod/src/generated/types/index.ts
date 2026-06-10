@@ -7,6 +7,7 @@
  */
 
 export * from './channel';
+export * from './digestResult';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './listReportsParams';

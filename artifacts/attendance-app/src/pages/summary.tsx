@@ -1,10 +1,37 @@
-import { useGetReportSummary } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useGetReportSummary, useSendDigest, getListReportsQueryKey, getGetReportSummaryQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Clock, CalendarX, LogOut, CheckCircle2 } from "lucide-react";
+import { FileText, Clock, CalendarX, LogOut, CheckCircle2, Send, Loader2 } from "lucide-react";
 
 export default function Summary() {
   const { data: summary, isLoading } = useGetReportSummary();
+  const sendDigest = useSendDigest();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleSendDigest = () => {
+    sendDigest.mutate(undefined, {
+      onSuccess: (data) => {
+        toast({
+          title: "送信完了",
+          description: `本日の連絡 ${data.sentCount}件 をまとめてLINE WORKSへ送信しました。`,
+        });
+        queryClient.invalidateQueries({ queryKey: getListReportsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetReportSummaryQueryKey() });
+      },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "送信失敗",
+          description: error.error || "エラーが発生しました。",
+        });
+      },
+    });
+  };
 
   const stats = [
     {
@@ -39,11 +66,30 @@ export default function Summary() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">サマリー</h2>
-        <p className="text-muted-foreground mt-1">
-          本日の勤怠連絡の集計情報です。
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">サマリー</h2>
+          <p className="text-muted-foreground mt-1">
+            本日の勤怠連絡の集計情報です。
+          </p>
+        </div>
+        <Button
+          onClick={handleSendDigest}
+          disabled={sendDigest.isPending}
+          className="shrink-0"
+        >
+          {sendDigest.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              送信中...
+            </>
+          ) : (
+            <>
+              <Send className="mr-2 h-4 w-4" />
+              今日の連絡をまとめて送信
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -113,6 +159,11 @@ export default function Summary() {
                   {report.status === 'sent' && (
                     <div className="ml-auto font-medium text-xs text-primary flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" /> 送信済み
+                    </div>
+                  )}
+                  {report.status === 'pending' && (
+                    <div className="ml-auto font-medium text-xs text-muted-foreground flex items-center gap-1">
+                      未送信
                     </div>
                   )}
                 </div>

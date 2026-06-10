@@ -131,6 +131,62 @@ export async function sendLineWorksMessage(opts: SendMessageOptions): Promise<st
   return result.messageId ?? "";
 }
 
+const TYPE_ORDER = ["absence", "late", "earlyLeave", "other"] as const;
+
+export interface DigestReport {
+  id: number;
+  type: string;
+  senderName: string;
+  date: string;
+  reason: string;
+  expectedTime?: string | null;
+}
+
+export async function sendDailyDigest(reports: DigestReport[], date: string): Promise<string> {
+  const token = await getAccessToken();
+
+  const grouped: Record<string, DigestReport[]> = {};
+  for (const r of reports) {
+    (grouped[r.type] ??= []).push(r);
+  }
+
+  let text = `【勤怠連絡まとめ】${date}\n\n`;
+  let total = 0;
+  for (const type of TYPE_ORDER) {
+    const items = grouped[type];
+    if (!items?.length) continue;
+    total += items.length;
+    text += `■ ${TYPE_LABELS[type]}（${items.length}件）\n`;
+    for (const r of items) {
+      text += `・${r.senderName} — ${r.reason}`;
+      if (type === "late" && r.expectedTime) {
+        text += `（${r.expectedTime}到着予定）`;
+      }
+      text += "\n";
+    }
+    text += "\n";
+  }
+  text += `合計 ${total}件`;
+
+  const body = { content: { type: "text", text } };
+  const url = `https://www.worksapis.com/v1.0/bots/${BOT_ID}/channels/${DEFAULT_CHANNEL_ID}/messages`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    logger.error({ status: response.status, body: errText }, "Failed to send LINE WORKS digest");
+    throw new Error(`LINE WORKS digest send failed: ${response.status} ${errText}`);
+  }
+
+  const result = (await response.json()) as { messageId?: string };
+  return result.messageId ?? "";
+}
+
 export async function getChannels(): Promise<Array<{ id: string; name: string; type: string | null }>> {
   const defaultChannel = {
     id: DEFAULT_CHANNEL_ID,

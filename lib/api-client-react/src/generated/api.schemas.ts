@@ -88,6 +88,15 @@ export interface Channel {
   type?: string | null;
 }
 
+export interface DigestResult {
+  /** 送信した連絡件数 */
+  sentCount: number;
+  /** 対象日付 (YYYY-MM-DD) */
+  date: string;
+  /** @nullable */
+  messageId?: string | null;
+}
+
 export interface ErrorResponse {
   error: string;
 }

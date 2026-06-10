@@ -9,7 +9,6 @@ import {
   ListReportsResponse,
   GetReportSummaryResponse,
 } from "@workspace/api-zod";
-import { sendLineWorksMessage } from "../lib/lineworks";
 
 const router: IRouter = Router();
 
@@ -87,36 +86,8 @@ router.post("/reports", async (req, res): Promise<void> => {
     })
     .returning();
 
-  let messageId: string | null = null;
-  let status: "sent" | "failed" = "sent";
-
-  try {
-    messageId = await sendLineWorksMessage({
-      channelId,
-      type,
-      senderName,
-      date,
-      reason,
-      expectedTime,
-    });
-  } catch (err) {
-    req.log.error({ err }, "Failed to send LINE WORKS message");
-    status = "failed";
-  }
-
-  const [updated] = await db
-    .update(reportsTable)
-    .set({ status, lineWorksMessageId: messageId })
-    .where(eq(reportsTable.id, report.id))
-    .returning();
-
-  if (status === "failed") {
-    res.status(502).json({ error: "LINE WORKSへの送信に失敗しました。連絡は記録されています。" });
-    return;
-  }
-
   res.status(201).json(
-    GetReportResponse.parse({ ...updated, createdAt: updated.createdAt.toISOString() })
+    GetReportResponse.parse({ ...report, createdAt: report.createdAt.toISOString() })
   );
 });
 

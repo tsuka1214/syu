@@ -21,6 +21,7 @@ import type {
 
 import type {
   Channel,
+  DigestResult,
   ErrorResponse,
   HealthStatus,
   ListReportsParams,
@@ -427,6 +428,76 @@ export function useGetReportSummary<TData = Awaited<ReturnType<typeof getReportS
 
 
 
+
+export const getSendDigestUrl = () => {
+
+
+
+
+  return `/api/lineworks/digest`
+}
+
+/**
+ * @summary 本日の未送信連絡をまとめてLINE WORKSへ送信
+ */
+export const sendDigest = async ( options?: RequestInit): Promise<DigestResult> => {
+
+  return customFetch<DigestResult>(getSendDigestUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSendDigestMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendDigest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendDigest>>, TError,void, TContext> => {
+
+const mutationKey = ['sendDigest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendDigest>>, void> = () => {
+
+
+          return  sendDigest(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendDigestMutationResult = NonNullable<Awaited<ReturnType<typeof sendDigest>>>
+
+    export type SendDigestMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary 本日の未送信連絡をまとめてLINE WORKSへ送信
+ */
+export const useSendDigest = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendDigest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendDigest>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSendDigestMutationOptions(options));
+    }
 
 export const getListChannelsUrl = () => {
 

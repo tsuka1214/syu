@@ -122,6 +122,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
 
+  /lineworks/digest:
+    post:
+      operationId: sendDigest
+      tags: [lineworks]
+      summary: 本日の未送信連絡をまとめてLINE WORKSへ送信
+      responses:
+        "200":
+          description: 送信成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DigestResult"
+        "400":
+          description: 送信する連絡がない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: LINE WORKS APIエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /lineworks/channels:
     get:
       operationId: listChannels
@@ -252,6 +277,21 @@ components:
         name:
           type: string
         type:
+          type: ["string", "null"]
+
+    DigestResult:
+      type: object
+      required:
+        - sentCount
+        - date
+      properties:
+        sentCount:
+          type: integer
+          description: 送信した連絡件数
+        date:
+          type: string
+          description: 対象日付 (YYYY-MM-DD)
+        messageId:
           type: ["string", "null"]
 
     ErrorResponse:
