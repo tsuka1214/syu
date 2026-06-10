@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LINE WORKS 欠席・遅刻連絡アプリ
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: reports
+    description: 欠席・遅刻連絡
+  - name: lineworks
+    description: LINE WORKS連携
 paths:
   /healthz:
     get:
@@ -24,6 +28,121 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /reports:
+    get:
+      operationId: listReports
+      tags: [reports]
+      summary: 連絡履歴一覧を取得
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: 連絡履歴一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: 欠席・遅刻連絡を送信
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: 送信成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "400":
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: LINE WORKS送信エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/{id}:
+    get:
+      operationId: getReport
+      tags: [reports]
+      summary: 連絡詳細を取得
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 連絡詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/summary:
+    get:
+      operationId: getReportSummary
+      tags: [reports]
+      summary: 連絡サマリー統計を取得
+      responses:
+        "200":
+          description: サマリー統計
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
+
+  /lineworks/channels:
+    get:
+      operationId: listChannels
+      tags: [lineworks]
+      summary: LINE WORKSチャンネル一覧を取得
+      responses:
+        "200":
+          description: チャンネル一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Channel"
+        "502":
+          description: LINE WORKS APIエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +153,111 @@ components:
       required:
         - status
 
+    Report:
+      type: object
+      required:
+        - id
+        - type
+        - senderName
+        - reason
+        - date
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [absence, late, earlyLeave, other]
+        senderName:
+          type: string
+        reason:
+          type: string
+        date:
+          type: string
+          description: 欠席・遅刻の日付 (YYYY-MM-DD)
+        expectedTime:
+          type: ["string", "null"]
+          description: 遅刻の場合の到着予定時刻
+        channelId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [sent, failed, pending]
+        lineWorksMessageId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ReportInput:
+      type: object
+      required:
+        - type
+        - senderName
+        - reason
+        - date
+      properties:
+        type:
+          type: string
+          enum: [absence, late, earlyLeave, other]
+        senderName:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          description: 欠席・遅刻の日付 (YYYY-MM-DD)
+        expectedTime:
+          type: string
+          description: 遅刻の場合の到着予定時刻
+        channelId:
+          type: string
+          description: 送信先チャンネルID（省略時はデフォルト）
+
+    ReportSummary:
+      type: object
+      required:
+        - total
+        - absenceCount
+        - lateCount
+        - earlyLeaveCount
+        - otherCount
+        - recentReports
+      properties:
+        total:
+          type: integer
+        absenceCount:
+          type: integer
+        lateCount:
+          type: integer
+        earlyLeaveCount:
+          type: integer
+        otherCount:
+          type: integer
+        recentReports:
+          type: array
+          items:
+            $ref: "#/components/schemas/Report"
+
+    Channel:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: ["string", "null"]
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
