@@ -91,7 +91,7 @@ export default function Summary() {
             <CardTitle className="text-base">自動送信の設定</CardTitle>
           </div>
           <CardDescription>
-            設定した曜日の朝9時に、その週の未送信連絡をまとめてLINE WORKSへ自動送信します。
+            設定した曜日の15:15に、その週の未送信連絡をまとめてLINE WORKSへ自動送信します。
           </CardDescription>
         </CardHeader>
         <CardContent>

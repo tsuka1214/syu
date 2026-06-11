@@ -29,8 +29,8 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 });
 
-// 毎朝9:00に実行し、設定された曜日であれば今週の未送信連絡をまとめてLINE WORKSへ送信
-cron.schedule("0 9 * * *", async () => {
+// 毎日15:15に実行し、設定された曜日であれば今週の未送信連絡をまとめてLINE WORKSへ送信
+cron.schedule("15 15 * * *", async () => {
   try {
     const [settings] = await db.select().from(settingsTable).limit(1);
     const configuredDay = settings?.weeklyDigestDay ?? 1; // デフォルト月曜
