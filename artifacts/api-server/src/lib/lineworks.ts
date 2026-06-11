@@ -193,6 +193,23 @@ export async function sendDailyDigest(reports: DigestReport[], date: string): Pr
   return result.messageId ?? "";
 }
 
+export async function sendBotMessage(userId: string, text: string): Promise<void> {
+  const token = await getAccessToken();
+  const url = `https://www.worksapis.com/v1.0/bots/${BOT_ID}/users/${userId}/messages`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ content: { type: "text", text } }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    logger.error({ status: response.status, body: errText }, "Failed to send Bot DM");
+    throw new Error(`Bot DM failed: ${response.status}`);
+  }
+}
+
 export async function getChannels(): Promise<Array<{ id: string; name: string; type: string | null }>> {
   const defaultChannel = {
     id: DEFAULT_CHANNEL_ID,

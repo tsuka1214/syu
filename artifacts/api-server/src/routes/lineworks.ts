@@ -3,6 +3,7 @@ import { gte, and, eq } from "drizzle-orm";
 import { db, reportsTable } from "@workspace/db";
 import { ListChannelsResponse } from "@workspace/api-zod";
 import { getChannels, sendDailyDigest } from "../lib/lineworks";
+import { handleWebhookEvent } from "../lib/lineworks-webhook";
 import { format } from "date-fns";
 
 const router: IRouter = Router();
@@ -46,6 +47,17 @@ router.post("/lineworks/digest", async (req, res): Promise<void> => {
     );
 
   res.json({ sentCount: pending.length, date: today, messageId });
+});
+
+router.post("/lineworks/webhook", async (req, res): Promise<void> => {
+  res.status(200).end();
+  const event = req.body;
+  if (!event) return;
+  try {
+    await handleWebhookEvent(event);
+  } catch (err) {
+    req.log.error({ err }, "Webhook event handler failed");
+  }
 });
 
 router.get("/lineworks/channels", async (req, res): Promise<void> => {
