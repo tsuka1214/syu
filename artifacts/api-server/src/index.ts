@@ -29,21 +29,19 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 });
 
-// 毎日15:15に実行し、設定された曜日であれば今週の未送信連絡をまとめてLINE WORKSへ送信
-cron.schedule("15 15 * * *", async () => {
+async function runWeeklyDigestIfConfigured(overrideDay?: number) {
   try {
     const [settings] = await db.select().from(settingsTable).limit(1);
-    const configuredDay = settings?.weeklyDigestDay ?? 1; // デフォルト月曜
+    const configuredDay = settings?.weeklyDigestDay ?? 1;
 
     const now = new Date();
-    const todayDay = now.getDay(); // 0=日, 1=月, ...
+    const todayDay = overrideDay ?? now.getDay();
 
     if (todayDay !== configuredDay) {
       logger.info({ todayDay, configuredDay }, "Weekly digest: not today, skipping");
       return;
     }
 
-    // 過去7日間の未送信連絡を取得
     const since = new Date(now);
     since.setDate(since.getDate() - 7);
 
@@ -69,4 +67,10 @@ cron.schedule("15 15 * * *", async () => {
   } catch (err) {
     logger.error({ err }, "Weekly digest cron failed");
   }
-}, { timezone: "Asia/Tokyo" });
+}
+
+// 日〜金: 毎日15:15に実行
+cron.schedule("15 15 * * 0-5", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
+
+// 土曜のみ: 8:45に実行
+cron.schedule("45 8 * * 6", () => runWeeklyDigestIfConfigured(6), { timezone: "Asia/Tokyo" });
