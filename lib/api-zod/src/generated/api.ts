@@ -61,6 +61,14 @@ export const CreateReportBody = zod.object({
 
 
 /**
+ * @summary 連絡を取り消し（削除）
+ */
+export const DeleteReportParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary 連絡詳細を取得
  */
 export const GetReportParams = zod.object({

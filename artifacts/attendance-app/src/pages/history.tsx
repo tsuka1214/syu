@@ -1,4 +1,7 @@
-import { useListReports } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useListReports, useDeleteReport, getListReportsQueryKey, getGetReportSummaryQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
   Table,
@@ -8,13 +11,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Trash2 } from "lucide-react";
 import { REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, REPORT_TYPE_COLORS, REPORT_STATUS_COLORS } from "@/lib/constants";
+
+type Report = { id: number; status: string; senderName: string; type: string; date: string; reason: string; expectedTime?: string | null; createdAt: string };
 
 export default function History() {
   const { data: reports, isLoading } = useListReports({ limit: 50 });
+  const deleteReport = useDeleteReport();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [target, setTarget] = useState<Report | null>(null);
+
+  const handleConfirmDelete = () => {
+    if (!target) return;
+    deleteReport.mutate(
+      { id: target.id },
+      {
+        onSuccess: () => {
+          toast({ title: "取り消し完了", description: "連絡を削除しました。" });
+          queryClient.invalidateQueries({ queryKey: getListReportsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetReportSummaryQueryKey() });
+          setTarget(null);
+        },
+        onError: () => {
+          toast({ variant: "destructive", title: "エラー", description: "削除に失敗しました。" });
+          setTarget(null);
+        },
+      }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -41,23 +82,21 @@ export default function History() {
                   <TableHead className="w-[120px]">対象日</TableHead>
                   <TableHead className="w-[150px]">氏名</TableHead>
                   <TableHead className="min-w-[200px]">理由 / 予定</TableHead>
+                  <TableHead className="w-[60px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                      {Array.from({ length: 7 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                      ))}
                     </TableRow>
                   ))
                 ) : reports?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       履歴がありません。
                     </TableCell>
                   </TableRow>
@@ -89,6 +128,16 @@ export default function History() {
                           </div>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setTarget(report as Report)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -97,6 +146,41 @@ export default function History() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!target} onOpenChange={(open) => { if (!open) setTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>連絡を取り消しますか？</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  <span className="font-medium text-foreground">{target?.senderName}</span> さんの{" "}
+                  <span className="font-medium text-foreground">{target?.date}</span> の連絡を削除します。
+                </p>
+                {target?.status === "sent" && (
+                  <p className="text-amber-600 text-sm">
+                    ※ すでにLINE WORKSへ送信済みのメッセージは取り消せません。履歴からの削除のみ行われます。
+                  </p>
+                )}
+                {target?.status === "pending" && (
+                  <p className="text-sm">
+                    まだ未送信のため、削除するとLINE WORKSへ送信されなくなります。
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

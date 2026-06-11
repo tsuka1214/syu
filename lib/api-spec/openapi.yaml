@@ -87,6 +87,25 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /reports/{id}:
+    delete:
+      operationId: deleteReport
+      tags: [reports]
+      summary: 連絡を取り消し（削除）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: 削除成功
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       operationId: getReport
       tags: [reports]

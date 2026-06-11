@@ -91,6 +91,27 @@ router.post("/reports", async (req, res): Promise<void> => {
   );
 });
 
+router.delete("/reports/:id", async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "無効なIDです" });
+    return;
+  }
+
+  const [deleted] = await db
+    .delete(reportsTable)
+    .where(eq(reportsTable.id, id))
+    .returning();
+
+  if (!deleted) {
+    res.status(404).json({ error: "連絡が見つかりません" });
+    return;
+  }
+
+  res.status(204).end();
+});
+
 router.get("/reports/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetReportParams.safeParse({ id: parseInt(raw, 10) });
