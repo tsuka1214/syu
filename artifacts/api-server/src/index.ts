@@ -69,8 +69,8 @@ async function runWeeklyDigestIfConfigured(overrideDay?: number) {
   }
 }
 
-// 日〜金: 毎日15:15に実行
-cron.schedule("15 15 * * 0-5", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
+// 月〜金: 毎日15:15に実行
+cron.schedule("15 15 * * 1-5", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
 
-// 土曜のみ: 8:45に実行
-cron.schedule("45 8 * * 6", () => runWeeklyDigestIfConfigured(6), { timezone: "Asia/Tokyo" });
+// 土・日: 8:45に実行
+cron.schedule("45 8 * * 0,6", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
