@@ -60,9 +60,8 @@ export default function Home() {
   const watchType = form.watch("type");
 
   const onSubmit = (data: FormValues) => {
-    // If not late, remove expectedTime
     const payload = { ...data };
-    if (payload.type !== "late") {
+    if (payload.type !== "late" && payload.type !== "earlyLeave") {
       delete payload.expectedTime;
     }
     createReport.mutate(
@@ -168,13 +167,15 @@ export default function Home() {
                 />
               </div>
 
-              {watchType === "late" && (
+              {(watchType === "late" || watchType === "earlyLeave") && (
                 <FormField
                   control={form.control}
                   name="expectedTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>到着予定時刻</FormLabel>
+                      <FormLabel>
+                        {watchType === "late" ? "到着予定時刻" : "早退予定時刻"}
+                      </FormLabel>
                       <FormControl>
                         <Input type="time" {...field} />
                       </FormControl>

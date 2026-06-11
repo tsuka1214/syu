@@ -102,6 +102,9 @@ export async function sendLineWorksMessage(opts: SendMessageOptions): Promise<st
   if (opts.type === "late" && opts.expectedTime) {
     text += `\n到着予定時刻: ${opts.expectedTime}`;
   }
+  if (opts.type === "earlyLeave" && opts.expectedTime) {
+    text += `\n早退予定時刻: ${opts.expectedTime}`;
+  }
 
   const body = {
     content: {
@@ -161,6 +164,9 @@ export async function sendDailyDigest(reports: DigestReport[], date: string): Pr
       text += `・${r.senderName} — ${r.reason}`;
       if (type === "late" && r.expectedTime) {
         text += `（${r.expectedTime}到着予定）`;
+      }
+      if (type === "earlyLeave" && r.expectedTime) {
+        text += `（${r.expectedTime}早退予定）`;
       }
       text += "\n";
     }
