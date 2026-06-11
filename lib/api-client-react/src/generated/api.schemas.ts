@@ -88,6 +88,23 @@ export interface Channel {
   type?: string | null;
 }
 
+export interface AppSettings {
+  /**
+     * 週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)
+     * @minimum 0
+     * @maximum 6
+     */
+  weeklyDigestDay: number;
+}
+
+export interface AppSettingsInput {
+  /**
+     * @minimum 0
+     * @maximum 6
+     */
+  weeklyDigestDay?: number;
+}
+
 export interface DigestResult {
   /** 送信した連絡件数 */
   sentCount: number;

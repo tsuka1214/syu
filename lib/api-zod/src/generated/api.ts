@@ -106,6 +106,41 @@ export const GetReportSummaryResponse = zod.object({
 
 
 /**
+ * @summary 設定を取得
+ */
+export const getSettingsResponseWeeklyDigestDayMin = 0;
+export const getSettingsResponseWeeklyDigestDayMax = 6;
+
+
+
+export const GetSettingsResponse = zod.object({
+  "weeklyDigestDay": zod.number().min(getSettingsResponseWeeklyDigestDayMin).max(getSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)')
+})
+
+
+/**
+ * @summary 設定を更新
+ */
+export const updateSettingsBodyWeeklyDigestDayMin = 0;
+export const updateSettingsBodyWeeklyDigestDayMax = 6;
+
+
+
+export const UpdateSettingsBody = zod.object({
+  "weeklyDigestDay": zod.number().min(updateSettingsBodyWeeklyDigestDayMin).max(updateSettingsBodyWeeklyDigestDayMax).optional()
+})
+
+export const updateSettingsResponseWeeklyDigestDayMin = 0;
+export const updateSettingsResponseWeeklyDigestDayMax = 6;
+
+
+
+export const UpdateSettingsResponse = zod.object({
+  "weeklyDigestDay": zod.number().min(updateSettingsResponseWeeklyDigestDayMin).max(updateSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)')
+})
+
+
+/**
  * @summary 本日の未送信連絡をまとめてLINE WORKSへ送信
  */
 export const SendDigestResponse = zod.object({

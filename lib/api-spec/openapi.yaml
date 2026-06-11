@@ -14,6 +14,8 @@ tags:
     description: 欠席・遅刻連絡
   - name: lineworks
     description: LINE WORKS連携
+  - name: settings
+    description: アプリ設定
 paths:
   /healthz:
     get:
@@ -121,6 +123,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: 設定を取得
+      responses:
+        "200":
+          description: 設定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSettings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: 設定を更新
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppSettingsInput"
+      responses:
+        "200":
+          description: 更新後の設定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSettings"
 
   /lineworks/digest:
     post:
@@ -278,6 +310,25 @@ components:
           type: string
         type:
           type: ["string", "null"]
+
+    AppSettings:
+      type: object
+      required:
+        - weeklyDigestDay
+      properties:
+        weeklyDigestDay:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: "週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)"
+
+    AppSettingsInput:
+      type: object
+      properties:
+        weeklyDigestDay:
+          type: integer
+          minimum: 0
+          maximum: 6
 
     DigestResult:
       type: object

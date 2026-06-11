@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './appSettings';
+export * from './appSettingsInput';
 export * from './channel';
 export * from './digestResult';
 export * from './errorResponse';

@@ -2,7 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import cron from "node-cron";
 import { and, eq, gte } from "drizzle-orm";
-import { db, reportsTable } from "@workspace/db";
+import { db, reportsTable, settingsTable } from "@workspace/db";
 import { sendDailyDigest } from "./lib/lineworks";
 import { format } from "date-fns";
 
@@ -29,31 +29,44 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 });
 
-// 毎朝9:00に当日分の未送信連絡をまとめてLINE WORKSへ送信
+// 毎朝9:00に実行し、設定された曜日であれば今週の未送信連絡をまとめてLINE WORKSへ送信
 cron.schedule("0 9 * * *", async () => {
-  const today = format(new Date(), "yyyy-MM-dd");
-  const todayStart = new Date(`${today}T00:00:00`);
-
   try {
-    const pending = await db
-      .select()
-      .from(reportsTable)
-      .where(and(gte(reportsTable.createdAt, todayStart), eq(reportsTable.status, "pending")));
+    const [settings] = await db.select().from(settingsTable).limit(1);
+    const configuredDay = settings?.weeklyDigestDay ?? 1; // デフォルト月曜
 
-    if (pending.length === 0) {
-      logger.info({ today }, "Daily digest: no pending reports");
+    const now = new Date();
+    const todayDay = now.getDay(); // 0=日, 1=月, ...
+
+    if (todayDay !== configuredDay) {
+      logger.info({ todayDay, configuredDay }, "Weekly digest: not today, skipping");
       return;
     }
 
-    const messageId = await sendDailyDigest(pending, today);
+    // 過去7日間の未送信連絡を取得
+    const since = new Date(now);
+    since.setDate(since.getDate() - 7);
+
+    const pending = await db
+      .select()
+      .from(reportsTable)
+      .where(and(gte(reportsTable.createdAt, since), eq(reportsTable.status, "pending")));
+
+    if (pending.length === 0) {
+      logger.info("Weekly digest: no pending reports");
+      return;
+    }
+
+    const rangeLabel = `${format(since, "yyyy/MM/dd")}〜${format(now, "yyyy/MM/dd")}`;
+    const messageId = await sendDailyDigest(pending, rangeLabel);
 
     await db
       .update(reportsTable)
       .set({ status: "sent", lineWorksMessageId: messageId })
-      .where(and(gte(reportsTable.createdAt, todayStart), eq(reportsTable.status, "pending")));
+      .where(and(gte(reportsTable.createdAt, since), eq(reportsTable.status, "pending")));
 
-    logger.info({ today, count: pending.length }, "Daily digest sent");
+    logger.info({ count: pending.length }, "Weekly digest sent");
   } catch (err) {
-    logger.error({ err }, "Daily digest cron failed");
+    logger.error({ err }, "Weekly digest cron failed");
   }
 }, { timezone: "Asia/Tokyo" });
