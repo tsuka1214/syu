@@ -1,19 +1,20 @@
+import { useState } from "react";
 import { useGetReportSummary, useSendDigest, useGetSettings, useUpdateSettings, getListReportsQueryKey, getGetReportSummaryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FileText, Clock, CalendarX, LogOut, CheckCircle2, Send, Loader2, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { FileText, Clock, CalendarX, LogOut, CheckCircle2, Send, Loader2, Settings, Save } from "lucide-react";
 
 const DAY_LABELS = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+const DEFAULT_TIMES = { "0": "08:45", "1": "15:15", "2": "15:15", "3": "15:15", "4": "15:15", "5": "15:15", "6": "08:45" };
+
+function toTimeValue(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
 
 export default function Summary() {
   const { data: summary, isLoading } = useGetReportSummary();
@@ -22,6 +23,10 @@ export default function Summary() {
   const updateSettings = useUpdateSettings();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const serverTimes = (settings?.weekdayTimes as Record<string, string> | undefined) ?? DEFAULT_TIMES;
+  const [editTimes, setEditTimes] = useState<Record<string, string>>(DEFAULT_TIMES);
+  const [hasEdits, setHasEdits] = useState(false);
 
   const handleSendDigest = () => {
     sendDigest.mutate(undefined, {
@@ -34,24 +39,42 @@ export default function Summary() {
         queryClient.invalidateQueries({ queryKey: getGetReportSummaryQueryKey() });
       },
       onError: (error) => {
-        toast({
-          variant: "destructive",
-          title: "送信失敗",
-          description: error.error || "エラーが発生しました。",
-        });
+        toast({ variant: "destructive", title: "送信失敗", description: error.error || "エラーが発生しました。" });
       },
     });
   };
 
-  const handleDayChange = (value: string) => {
+  const handleTimeChange = (day: string, value: string) => {
+    setEditTimes((prev) => ({ ...prev, [day]: value }));
+    setHasEdits(true);
+  };
+
+  const handleReset = () => {
+    setEditTimes(serverTimes);
+    setHasEdits(false);
+  };
+
+  const handleSave = () => {
+    const payload: Record<string, string> = {};
+    for (let i = 0; i <= 6; i++) {
+      const v = editTimes[String(i)]?.trim();
+      if (!v || !/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/.test(v)) {
+        toast({ variant: "destructive", title: "入力エラー", description: `${DAY_LABELS[i]}の時間形式が正しくありません（HH:MM）` });
+        return;
+      }
+      payload[String(i)] = v;
+    }
+
     updateSettings.mutate(
-      { data: { weeklyDigestDay: Number(value) } },
+      { data: { weekdayTimes: payload } },
       {
         onSuccess: (data) => {
           toast({
             title: "設定を保存しました",
-            description: `毎週${DAY_LABELS[data.weeklyDigestDay ?? 1]}に自動送信します。`,
+            description: `自動送信時間を更新しました。`,
           });
+          setEditTimes((data.weekdayTimes as Record<string, string>) ?? DEFAULT_TIMES);
+          setHasEdits(false);
         },
         onError: () => {
           toast({ variant: "destructive", title: "保存失敗", description: "設定の保存に失敗しました。" });
@@ -83,40 +106,65 @@ export default function Summary() {
         </Button>
       </div>
 
-      {/* 週次自動送信の曜日設定 */}
+      {/* 自動送信時間設定 */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">自動送信の設定</CardTitle>
+            <CardTitle className="text-base">自動送信の時間設定</CardTitle>
           </div>
           <CardDescription>
-            設定した曜日の15:15（土・日曜日は8:45）に、その週の未送信連絡をまとめてLINE WORKSへ自動送信します。
+            各曜日の自動一括送信時間を設定できます。未設定の曜日は自動送信されません。
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium whitespace-nowrap">送信曜日</span>
-            {isLoadingSettings ? (
-              <Skeleton className="h-9 w-36" />
-            ) : (
-              <Select
-                value={String(settings?.weeklyDigestDay ?? 1)}
-                onValueChange={handleDayChange}
-                disabled={updateSettings.isPending}
-              >
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAY_LABELS.map((label, i) => (
-                    <SelectItem key={i} value={String(i)}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {updateSettings.isPending && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-          </div>
+          {isLoadingSettings ? (
+            <div className="space-y-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {DAY_LABELS.map((label, i) => {
+                const day = String(i);
+                const value = editTimes[day] ?? serverTimes[day] ?? "";
+                return (
+                  <div key={day} className="flex items-center gap-3">
+                    <span className="text-sm font-medium w-20 shrink-0">{label}</span>
+                    <Input
+                      type="time"
+                      value={value}
+                      onChange={(e) => handleTimeChange(day, e.target.value)}
+                      className="w-32"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {toTimeValue(value) > 0 ? "自動送信有効" : "自動送信無効"}
+                    </span>
+                  </div>
+                );
+              })}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={updateSettings.isPending || !hasEdits}
+                >
+                  {updateSettings.isPending ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : (
+                    <Save className="mr-1 h-3 w-3" />
+                  )}
+                  保存
+                </Button>
+                {hasEdits && (
+                  <Button variant="ghost" size="sm" onClick={handleReset}>
+                    リセット
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

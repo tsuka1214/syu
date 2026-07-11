@@ -330,16 +330,30 @@ components:
         type:
           type: ["string", "null"]
 
+    WeekdayTimes:
+      type: object
+      description: "曜日ごとの自動送信時間 { \"0\": \"08:45\", \"1\": \"15:15\", ... }"
+      additionalProperties:
+        type: string
+        pattern: "^([01]?[0-9]|2[0-3]):([0-5][0-9])$"
+      example:
+        "0": "08:45"
+        "1": "15:15"
+        "6": "08:45"
+
     AppSettings:
       type: object
       required:
         - weeklyDigestDay
+        - weekdayTimes
       properties:
         weeklyDigestDay:
           type: integer
           minimum: 0
           maximum: 6
-          description: "週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)"
+          description: "週次ダイジェストを送信する曜日 (0=日, 1=月, ... 6=土) — 過去互換用"
+        weekdayTimes:
+          $ref: "#/components/schemas/WeekdayTimes"
 
     AppSettingsInput:
       type: object
@@ -348,6 +362,8 @@ components:
           type: integer
           minimum: 0
           maximum: 6
+        weekdayTimes:
+          $ref: "#/components/schemas/WeekdayTimes"
 
     DigestResult:
       type: object

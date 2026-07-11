@@ -119,10 +119,12 @@ export const GetReportSummaryResponse = zod.object({
 export const getSettingsResponseWeeklyDigestDayMin = 0;
 export const getSettingsResponseWeeklyDigestDayMax = 6;
 
+export const getSettingsResponseWeekdayTimesRegExpOne = new RegExp('^([01]?[0-9]|2[0-3]):([0-5][0-9])$');
 
 
 export const GetSettingsResponse = zod.object({
-  "weeklyDigestDay": zod.number().min(getSettingsResponseWeeklyDigestDayMin).max(getSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)')
+  "weeklyDigestDay": zod.number().min(getSettingsResponseWeeklyDigestDayMin).max(getSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, ... 6=土) — 過去互換用'),
+  "weekdayTimes": zod.record(zod.string(), zod.string().regex(getSettingsResponseWeekdayTimesRegExpOne)).describe('曜日ごとの自動送信時間 { \"0\": \"08:45\", \"1\": \"15:15\", ... }')
 })
 
 
@@ -132,19 +134,23 @@ export const GetSettingsResponse = zod.object({
 export const updateSettingsBodyWeeklyDigestDayMin = 0;
 export const updateSettingsBodyWeeklyDigestDayMax = 6;
 
+export const updateSettingsBodyWeekdayTimesRegExpOne = new RegExp('^([01]?[0-9]|2[0-3]):([0-5][0-9])$');
 
 
 export const UpdateSettingsBody = zod.object({
-  "weeklyDigestDay": zod.number().min(updateSettingsBodyWeeklyDigestDayMin).max(updateSettingsBodyWeeklyDigestDayMax).optional()
+  "weeklyDigestDay": zod.number().min(updateSettingsBodyWeeklyDigestDayMin).max(updateSettingsBodyWeeklyDigestDayMax).optional(),
+  "weekdayTimes": zod.record(zod.string(), zod.string().regex(updateSettingsBodyWeekdayTimesRegExpOne)).optional().describe('曜日ごとの自動送信時間 { \"0\": \"08:45\", \"1\": \"15:15\", ... }')
 })
 
 export const updateSettingsResponseWeeklyDigestDayMin = 0;
 export const updateSettingsResponseWeeklyDigestDayMax = 6;
 
+export const updateSettingsResponseWeekdayTimesRegExpOne = new RegExp('^([01]?[0-9]|2[0-3]):([0-5][0-9])$');
 
 
 export const UpdateSettingsResponse = zod.object({
-  "weeklyDigestDay": zod.number().min(updateSettingsResponseWeeklyDigestDayMin).max(updateSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)')
+  "weeklyDigestDay": zod.number().min(updateSettingsResponseWeeklyDigestDayMin).max(updateSettingsResponseWeeklyDigestDayMax).describe('週次ダイジェストを送信する曜日 (0=日, 1=月, ... 6=土) — 過去互換用'),
+  "weekdayTimes": zod.record(zod.string(), zod.string().regex(updateSettingsResponseWeekdayTimesRegExpOne)).describe('曜日ごとの自動送信時間 { \"0\": \"08:45\", \"1\": \"15:15\", ... }')
 })
 
 

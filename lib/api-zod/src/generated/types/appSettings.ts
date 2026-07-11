@@ -5,12 +5,14 @@
  * LINE WORKS 欠席・遅刻連絡アプリ
  * OpenAPI spec version: 0.1.0
  */
+import type { WeekdayTimes } from './weekdayTimes';
 
 export interface AppSettings {
   /**
-     * 週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)
+     * 週次ダイジェストを送信する曜日 (0=日, 1=月, ... 6=土) — 過去互換用
      * @minimum 0
      * @maximum 6
      */
   weeklyDigestDay: number;
+  weekdayTimes: WeekdayTimes;
 }

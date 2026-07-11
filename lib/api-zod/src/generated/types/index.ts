@@ -19,3 +19,4 @@ export * from './reportInputType';
 export * from './reportStatus';
 export * from './reportSummary';
 export * from './reportType';
+export * from './weekdayTimes';

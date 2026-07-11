@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import cron from "node-cron";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, reportsTable, settingsTable } from "@workspace/db";
 import { sendDailyDigest } from "./lib/lineworks";
 import { format } from "date-fns";
@@ -57,8 +57,29 @@ async function runDailyDigest() {
   }
 }
 
-// 月〜金: 毎日15:15に実行
-cron.schedule("15 15 * * 1-5", () => runDailyDigest(), { timezone: "Asia/Tokyo" });
+async function checkScheduledDigest() {
+  try {
+    const now = new Date();
+    const day = String(now.getDay());
+    const timeStr = format(now, "HH:mm");
 
-// 土・日: 8:45に実行
-cron.schedule("45 8 * * 0,6", () => runDailyDigest(), { timezone: "Asia/Tokyo" });
+    const [settings] = await db.select().from(settingsTable).limit(1);
+    let weekdayTimes: Record<string, string> = {};
+    try {
+      weekdayTimes = JSON.parse(settings?.weekdayTimes ?? "{}") as Record<string, string>;
+    } catch {
+      weekdayTimes = {};
+    }
+
+    const scheduled = weekdayTimes[day];
+    if (!scheduled || scheduled !== timeStr) return;
+
+    logger.info({ day, time: timeStr }, "Scheduled digest triggered");
+    await runDailyDigest();
+  } catch (err) {
+    logger.error({ err }, "Scheduled digest check failed");
+  }
+}
+
+// 毎分チェックして設定時間に一致すれば実行
+cron.schedule("* * * * *", () => checkScheduledDigest(), { timezone: "Asia/Tokyo" });

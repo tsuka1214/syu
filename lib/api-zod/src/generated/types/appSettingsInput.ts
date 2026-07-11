@@ -5,6 +5,7 @@
  * LINE WORKS 欠席・遅刻連絡アプリ
  * OpenAPI spec version: 0.1.0
  */
+import type { WeekdayTimes } from './weekdayTimes';
 
 export interface AppSettingsInput {
   /**
@@ -12,4 +13,5 @@ export interface AppSettingsInput {
      * @maximum 6
      */
   weeklyDigestDay?: number;
+  weekdayTimes?: WeekdayTimes;
 }

@@ -88,13 +88,19 @@ export interface Channel {
   type?: string | null;
 }
 
+/**
+ * 曜日ごとの自動送信時間 { "0": "08:45", "1": "15:15", ... }
+ */
+export interface WeekdayTimes {[key: string]: string}
+
 export interface AppSettings {
   /**
-     * 週次ダイジェストを送信する曜日 (0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土)
+     * 週次ダイジェストを送信する曜日 (0=日, 1=月, ... 6=土) — 過去互換用
      * @minimum 0
      * @maximum 6
      */
   weeklyDigestDay: number;
+  weekdayTimes: WeekdayTimes;
 }
 
 export interface AppSettingsInput {
@@ -103,6 +109,7 @@ export interface AppSettingsInput {
      * @maximum 6
      */
   weeklyDigestDay?: number;
+  weekdayTimes?: WeekdayTimes;
 }
 
 export interface DigestResult {
