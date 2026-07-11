@@ -2,8 +2,7 @@ modules = ["nodejs-24"]
 
 [deployment]
 router = "application"
-deploymentTarget = "static"
-publicDir = "tsuka.1214@outlook.jp"
+deploymentTarget = "cloudrun"
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
