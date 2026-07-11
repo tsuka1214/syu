@@ -15,14 +15,10 @@ interface TokenResponse {
 }
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
+let cachedCommonToken: { token: string; expiresAt: number } | null = null;
 
-async function getAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
-    return cachedToken.token;
-  }
-
+function buildAssertion(): string {
   const now = Math.floor(Date.now() / 1000);
-
   const jwtPayload = {
     iss: CLIENT_ID,
     sub: SERVICE_ACCOUNT,
@@ -43,7 +39,15 @@ async function getAccessToken(): Promise<string> {
     privateKey = `${begin}\n${chunked}\n${end}`;
   }
 
-  const assertion = jwt.sign(jwtPayload, privateKey, { algorithm: "RS256" });
+  return jwt.sign(jwtPayload, privateKey, { algorithm: "RS256" });
+}
+
+async function getAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
+    return cachedToken.token;
+  }
+
+  const assertion = buildAssertion();
 
   const params = new URLSearchParams({
     assertion,
