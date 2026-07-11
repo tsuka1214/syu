@@ -29,48 +29,36 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 });
 
-async function runWeeklyDigestIfConfigured(overrideDay?: number) {
+async function runDailyDigest() {
   try {
-    const [settings] = await db.select().from(settingsTable).limit(1);
-    const configuredDay = settings?.weeklyDigestDay ?? 1;
-
     const now = new Date();
-    const todayDay = overrideDay ?? now.getDay();
-
-    if (todayDay !== configuredDay) {
-      logger.info({ todayDay, configuredDay }, "Weekly digest: not today, skipping");
-      return;
-    }
-
-    const since = new Date(now);
-    since.setDate(since.getDate() - 7);
+    const today = format(now, "yyyy-MM-dd");
 
     const pending = await db
       .select()
       .from(reportsTable)
-      .where(and(gte(reportsTable.createdAt, since), eq(reportsTable.status, "pending")));
+      .where(and(eq(reportsTable.date, today), eq(reportsTable.status, "pending")));
 
     if (pending.length === 0) {
-      logger.info("Weekly digest: no pending reports");
+      logger.info("Daily digest: no pending reports for today");
       return;
     }
 
-    const rangeLabel = `${format(since, "yyyy/MM/dd")}〜${format(now, "yyyy/MM/dd")}`;
-    const messageId = await sendDailyDigest(pending, rangeLabel);
+    const messageId = await sendDailyDigest(pending, today);
 
     await db
       .update(reportsTable)
       .set({ status: "sent", lineWorksMessageId: messageId })
-      .where(and(gte(reportsTable.createdAt, since), eq(reportsTable.status, "pending")));
+      .where(and(eq(reportsTable.date, today), eq(reportsTable.status, "pending")));
 
-    logger.info({ count: pending.length }, "Weekly digest sent");
+    logger.info({ count: pending.length }, "Daily digest sent");
   } catch (err) {
-    logger.error({ err }, "Weekly digest cron failed");
+    logger.error({ err }, "Daily digest cron failed");
   }
 }
 
 // 月〜金: 毎日15:15に実行
-cron.schedule("15 15 * * 1-5", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
+cron.schedule("15 15 * * 1-5", () => runDailyDigest(), { timezone: "Asia/Tokyo" });
 
 // 土・日: 8:45に実行
-cron.schedule("45 8 * * 0,6", () => runWeeklyDigestIfConfigured(), { timezone: "Asia/Tokyo" });
+cron.schedule("45 8 * * 0,6", () => runDailyDigest(), { timezone: "Asia/Tokyo" });
