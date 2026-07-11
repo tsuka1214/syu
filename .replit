@@ -2,7 +2,8 @@ modules = ["nodejs-24"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
+deploymentTarget = "static"
+publicDir = "tsuka.1214@outlook.jp"
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
