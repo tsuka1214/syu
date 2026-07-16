@@ -4,15 +4,17 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+const dbUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!dbUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "SUPABASE_DATABASE_URL or DATABASE_URL must be set.",
   );
 }
 
 const poolConfig: pg.PoolConfig = {
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+  connectionString: dbUrl,
+  ssl: { rejectUnauthorized: false },
 };
 
 export const pool = new Pool(poolConfig);
