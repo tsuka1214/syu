@@ -1,5 +1,0 @@
-{
-  "buildCommand": "pnpm --filter @workspace/attendance-app build",
-  "outputDirectory": "artifacts/attendance-app/dist",
-  "installCommand": "pnpm install"
-}
