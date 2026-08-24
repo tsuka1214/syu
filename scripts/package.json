@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+      "start": "tsx ./src/index.ts"
+}
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
