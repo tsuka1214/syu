@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { FileText, Clock, CalendarX, LogOut, CheckCircle2, Send, Loader2, Settings, Save } from "lucide-react";
 
 const DAY_LABELS = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
-const DEFAULT_TIMES = { "0": "08:45", "1": "15:15", "2": "15:15", "3": "15:15", "4": "15:15", "5": "15:15", "6": "08:45" };
+const DEFAULT_TIMES: Record<string, string> = { "0": "08:45", "1": "15:15", "2": "15:15", "3": "15:15", "4": "15:15", "5": "15:15", "6": "08:45" };
 
 function toTimeValue(t: string) {
   const [h, m] = t.split(":").map(Number);
@@ -39,7 +39,7 @@ export default function Summary() {
         queryClient.invalidateQueries({ queryKey: getGetReportSummaryQueryKey() });
       },
       onError: (error) => {
-        toast({ variant: "destructive", title: "送信失敗", description: error.error || "エラーが発生しました。" });
+        toast({ variant: "destructive", title: "送信失敗", description: error.data?.error || "エラーが発生しました。" });
       },
     });
   };

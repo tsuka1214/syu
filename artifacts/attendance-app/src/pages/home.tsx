@@ -86,7 +86,7 @@ export default function Home() {
           toast({
             variant: "destructive",
             title: "送信失敗",
-            description: error.error || "エラーが発生しました。",
+            description: error.data?.error || "エラーが発生しました。",
           });
         },
       }

@@ -4,10 +4,12 @@ import { sendBotMessage } from "./lineworks";
 import { logger } from "./logger";
 
 // ---- 会話セッション ----
+type ReportType = "absence" | "late" | "earlyLeave" | "other";
+
 interface Session {
   step: "type" | "name" | "date" | "reason" | "time";
   data: Partial<{
-    type: string;
+    type: ReportType;
     senderName: string;
     date: string;
     reason: string;
@@ -18,7 +20,7 @@ interface Session {
 const sessions = new Map<string, Session>();
 
 // ---- 定数 ----
-const TYPE_LOOKUP: Record<string, string> = {
+const TYPE_LOOKUP: Record<string, ReportType> = {
   "1": "absence", "欠席": "absence",
   "2": "late",    "遅刻": "late",
   "3": "earlyLeave", "早退": "earlyLeave",
